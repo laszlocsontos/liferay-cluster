@@ -1,0 +1,6 @@
+*.zip
+*.war
+*.rpm
+license*.xml
+*~
+.vagrant
