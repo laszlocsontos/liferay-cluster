@@ -182,6 +182,7 @@ dl.store.impl=com.liferay.portlet.documentlibrary.store.DBStore
 
 ### Lucene replication
 lucene.replicate.write=true
+portal.instance.http.port=8080
 EOF
 
 # setenv.sh
