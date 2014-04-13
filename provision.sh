@@ -105,17 +105,42 @@ EOF
 
 ### LIFERAY
 vagrant_home=/home/vagrant
-liferay_home=$vagrant_home/liferay-portal-6.1.30-ee-ga3
+
+# Bundle
+liferay_version=6.1.30-ee-ga3
+liferay_home=$vagrant_home/liferay-portal-$liferay_version
 
 mkdir -p $liferay_home/deploy
 mkdir -p $liferay_home/diag
 
-unzip -q /vagrant/liferay-portal-tomcat-6.1.30-ee-ga3-20130812170130063.zip -d $vagrant_home
+unzip -q /vagrant/liferay-portal-tomcat-$liferay_version*.zip -d $vagrant_home
 
+# Patching tool
+if [ -f /vagrant/patching-tool*zip ]; then
+    rm -rf $liferay_home/patching-tool
+
+    unzip -q /vagrant/patching-tool*zip -d $liferay_home
+fi
+
+ln -sf $liferay_home/patching-tool/patches $liferay_home/patches
+
+cp /vagrant/liferay*fix*zip $liferay_home/patches
+
+sh $liferay_home/patching-tool/patching-tool.sh auto-discovery
+sh $liferay_home/patching-tool/patching-tool.sh install
+sh $liferay_home/patching-tool/patching-tool.sh info
+
+# Plugins
 cp /vagrant/*.war $liferay_home/deploy
-cp /vagrant/license*.xml $liferay_home/deploy
-cp /vagrant/tcp.xml $liferay_home
 
+# License
+cp /vagrant/license*.xml $liferay_home/deploy
+
+# JGroups configuration
+jgroups_version=3
+cp /vagrant/tcp-jgroups-$jgroups_version.xml $liferay_home/tcp.xml
+
+# portal-ext.properties
 cat > $liferay_home/portal-ext.properties <<EOF
 ### Developer mode
 include-and-override=portal-developer.properties
@@ -159,6 +184,7 @@ dl.store.impl=com.liferay.portlet.documentlibrary.store.DBStore
 lucene.replicate.write=true
 EOF
 
+# setenv.sh
 cat > $liferay_home/tomcat*/bin/setenv.sh <<EOF
 # General
 export JAVA_OPTS="\$JAVA_OPTS -Dfile.encoding=UTF8 -Dorg.apache.catalina.loader.WebappClassLoader.ENABLE_CLEAR_REFERENCES=false -Duser.timezone=GMT"
@@ -185,7 +211,6 @@ EOF
 cat > $liferay_home/tomcat*/webapps/ROOT/WEB-INF/classes/log4j.properties <<EOF
 log4j.logger.com.liferay.portal.cluster.ClusterBase=DEBUG
 log4j.logger.com.liferay.portal.cluster.ClusterExecutorImpl=DEBUG
-log4j.logger.com.liferay.portal.cluster.ClusterLinkImpl=DEBUG
 
 log4j.logger.com.liferay.portal.search.cluster.LuceneClusterUtil=DEBUG
 log4j.logger.com.liferay.portal.search.lucene.LuceneHelperImpl=DEBUG

@@ -9,7 +9,8 @@
 <config xmlns="urn:org:jgroups"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="urn:org:jgroups http://www.jgroups.org/schema/JGroups-2.8.xsd">
-		<TCP bind_port="${jgroups.bind_port:7800}"
+    <TCP singleton_name="LiferayClusterLink"
+         bind_port="${jgroups.bind_port:7800}"
          bind_interface="${jgroups.bind_interface:eth0}"
          loopback="true"
          recv_buf_size="${tcp.recv_buf_size:20M}"
