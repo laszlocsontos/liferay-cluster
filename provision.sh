@@ -11,6 +11,9 @@ yum -q -y install ksh sudo vim-enhanced nano joe mc openssh-server \
 	vsftpd perl-core man man-pages sysstat \
 	zip unzip xauth xterm nc nmap tcpdump screen zsh tmux
 
+### Multicast
+echo "224.0.0.0/4 dev eth1" > /etc/sysconfig/network-scripts/route-eth1
+
 ### PostgreSQL
 if [ $(hostname) == "liferay-node1" ]; then
 	yum -y install postgresql-server
@@ -111,8 +114,21 @@ unzip -q /vagrant/liferay-portal-tomcat-6.1.30-ee-ga3-20130812170130063.zip -d $
 
 cp /vagrant/*.war $liferay_home/deploy
 cp /vagrant/license*.xml $liferay_home/deploy
+cp /vagrant/tcp.xml $liferay_home
 
 cat > $liferay_home/portal-ext.properties <<EOF
+### Developer mode
+include-and-override=portal-developer.properties
+admin.email.from.name=Test Test
+liferay.home=$liferay_home
+admin.email.from.address=test@liferay.com
+setup.wizard.enabled=false
+
+### Disable terms of use
+terms.of.use.required=false
+users.reminder.queries.enabled=false
+users.reminder.queries.custom.question.enabled=false
+
 ### Database
 jdbc.default.driverClassName=org.postgresql.Driver
 jdbc.default.url=jdbc:postgresql://10.211.55.10:5432/lportal
@@ -121,27 +137,25 @@ jdbc.default.password=password
 
 ### Clusterring
 cluster.link.enabled=true
+cluster.link.autodetect.address=10.211.55.1:22
 cluster.executor.debug.enabled=true
 
 ### UNICAST
-cluster.link.channel.system.properties=\\
-	jgroups.tcpping.initial_hosts=10.211.55.10[7800],10.211.55.20[7800],10.211.55.30[7800],10.211.55.40[7800]
+cluster.link.channel.properties.control=$liferay_home/tcp.xml
+cluster.link.channel.properties.transport.0=$liferay_home/tcp.xml
 
-cluster.link.autodetect.address=10.211.55.1:22
-cluster.link.channel.properties.control=tcp.xml
-cluster.link.channel.properties.transport.0=tcp.xml
-
-### Cache replications
+### Cache replication
 ehcache.cluster.link.replication.enabled=true
 
 ### Cluster scheduler
 org.quartz.jobStore.isClustered=true
 
 ### DL
-dl.store.file.system.root.dir=/vagrant/dlstore
-dl.store.impl=com.liferay.portlet.documentlibrary.store.AdvancedFileSystemStore
+#dl.store.file.system.root.dir=/vagrant/dlstore
+#dl.store.impl=com.liferay.portlet.documentlibrary.store.AdvancedFileSystemStore
+dl.store.impl=com.liferay.portlet.documentlibrary.store.DBStore
 
-### Lucene
+### Lucene replication
 lucene.replicate.write=true
 EOF
 
@@ -153,7 +167,9 @@ export JAVA_OPTS="\$JAVA_OPTS -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:+CMSP
 
 # Cluster
 export JAVA_OPTS="\$JAVA_OPTS -Djava.net.preferIPv4Stack=true"
-#export JAVA_OPTS="\$JAVA_OPTS -Djgroups.tcpping.initial_hosts=10.211.55.10[7800],10.211.55.20[7800],10.211.55.30[7800],10.211.55.40[7800]"
+export JAVA_OPTS="\$JAVA_OPTS -Djgroups.bind_interface=eth1"
+export JAVA_OPTS="\$JAVA_OPTS -Djgroups.bind_port=7900"
+export JAVA_OPTS="\$JAVA_OPTS -Djgroups.tcpping.initial_hosts=10.211.55.10[7900],10.211.55.20[7900],10.211.55.30[7900],10.211.55.40[7900]"
 
 # Monitoring
 export JAVA_OPTS="\$JAVA_OPTS -Dcom.sun.management.jmxremote=true"
@@ -168,10 +184,13 @@ EOF
 
 cat > $liferay_home/tomcat*/webapps/ROOT/WEB-INF/classes/log4j.properties <<EOF
 log4j.logger.com.liferay.portal.cluster.ClusterBase=DEBUG
+log4j.logger.com.liferay.portal.cluster.ClusterExecutorImpl=DEBUG
+log4j.logger.com.liferay.portal.cluster.ClusterLinkImpl=DEBUG
+
+log4j.logger.com.liferay.portal.search.cluster.LuceneClusterUtil=DEBUG
+log4j.logger.com.liferay.portal.search.lucene.LuceneHelperImpl=DEBUG
 
 log4j.logger.net.sf.ehcache=INFO
-log4j.logger.net.sf.ehcache.config=DEBUG
-log4j.logger.net.sf.ehcache.distribution=DEBUG
 EOF
 
 chown -R vagrant:vagrant $liferay_home
