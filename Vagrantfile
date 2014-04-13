@@ -116,48 +116,68 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   #
   #   chef.validation_client_name = "ORGNAME-validator"
 
-  config.vm.define "liferay-node1" do |primary|
-    primary.vm.box = "centos65-x86_64-20131205"
-    primary.vm.network :private_network,ip: "10.211.55.10"
-    primary.vm.hostname = "liferay-node1"
+  config.vm.define "liferay-node1" do |node|
+    node.vm.box = "centos65-x86_64-20131205"
+    node.vm.network :private_network,ip: "10.211.55.10"
+    node.vm.hostname = "liferay-node1"
 
-    primary.vm.provider "virtualbox" do |v|
+    node.vm.network "forwarded_port", guest: 8000, host: 18000
+    node.vm.network "forwarded_port", guest: 8080, host: 18080
+    node.vm.network "forwarded_port", guest: 9000, host: 19000
+
+    node.vm.provider "virtualbox" do |v|
         v.customize [ "modifyvm", :id, "--cpus", "1" ]
         v.customize [ "modifyvm", :id, "--memory", "2048" ]
     end
+
+    node.vm.provision "shell", path: "provision.sh"
   end
 
-  config.vm.define "liferay-node2" do |primary|
-    primary.vm.box = "centos65-x86_64-20131205"
-    primary.vm.network :private_network,ip: "10.211.55.20"
-    primary.vm.hostname = "liferay-node2"
+  config.vm.define "liferay-node2" do |node|
+    node.vm.box = "centos65-x86_64-20131205"
+    node.vm.network :private_network,ip: "10.211.55.20"
+    node.vm.hostname = "liferay-node2"
 
-    primary.vm.provider "virtualbox" do |v|
+    node.vm.network "forwarded_port", guest: 8000, host: 28000
+    node.vm.network "forwarded_port", guest: 8080, host: 28080
+    node.vm.network "forwarded_port", guest: 9000, host: 29000
+
+    node.vm.provider "virtualbox" do |v|
         v.customize [ "modifyvm", :id, "--cpus", "1" ]
         v.customize [ "modifyvm", :id, "--memory", "2048" ]
     end
+
+    node.vm.provision "shell", path: "provision.sh"
   end
 
-  config.vm.define "liferay-node3" do |primary|
-    primary.vm.box = "centos65-x86_64-20131205"
-    primary.vm.network :private_network,ip: "10.211.55.30"
-    primary.vm.hostname = "liferay-node3"
+  config.vm.define "liferay-node3" do |node|
+    node.vm.box = "centos65-x86_64-20131205"
+    node.vm.network :private_network,ip: "10.211.55.30"
+    node.vm.hostname = "liferay-node3"
 
-    primary.vm.provider "virtualbox" do |v|
+    node.vm.network "forwarded_port", guest: 8000, host: 38000
+    node.vm.network "forwarded_port", guest: 8080, host: 38080
+    node.vm.network "forwarded_port", guest: 9000, host: 39000
+
+    node.vm.provider "virtualbox" do |v|
         v.customize [ "modifyvm", :id, "--cpus", "1" ]
         v.customize [ "modifyvm", :id, "--memory", "2048" ]
     end
+
+    node.vm.provision "shell", path: "provision.sh"
   end
 
-  #config.vm.define "liferay-node4" do |primary|
-  #  primary.vm.box = "centos65-x86_64-20131205"
-  #  primary.vm.network :private_network,ip: "10.211.55.40"
-  #  primary.vm.hostname = "liferay-node4"
+#  config.vm.define "liferay-node4" do |node|
+#    node.vm.box = "centos65-x86_64-20131205"
+#    node.vm.network :private_network,ip: "10.211.55.40"
+#    node.vm.hostname = "liferay-node3"
 #
-#    primary.vm.provider "virtualbox" do |v|
-#        v.customize [ "modifyvm", :id, "--cpus", "1" ]
-#        v.customize [ "modifyvm", :id, "--memory", "2048" ]
-#    end
-#  end
+#    node.vm.provider "virtualbox" do |v|
+#       v.customize [ "modifyvm", :id, "--cpus", "1" ]
+#       v.customize [ "modifyvm", :id, "--memory", "2048" ]
+#   end
+#
+#   node.vm.provision "shell", path: "provision.sh"
+# end
 
 end

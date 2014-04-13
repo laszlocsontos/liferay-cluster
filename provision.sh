@@ -15,16 +15,18 @@ yum -q -y install ksh sudo vim-enhanced nano joe mc openssh-server \
 if [ $(hostname) == "liferay-node1" ]; then
 	yum -y install postgresql-server
 
-	/etc/init.d/postgresql initdb
+	service postgresql initdb
 
 	chkconfig --level 3 postgresql on
 
 	cp /var/lib/pgsql/data/postgresql.conf /var/lib/pgsql/data/postgresql.conf.orig
 	sed 's/shared_buffers.*=.*MB/shared_buffers=128MB/g' /var/lib/pgsql/data/postgresql.conf > /var/lib/pgsql/data/postgresql.conf.new
+	echo "listen_addresses='*'" >> /var/lib/pgsql/data/postgresql.conf.new
 	cp /var/lib/pgsql/data/postgresql.conf.new /var/lib/pgsql/data/postgresql.conf
 
 	cp /var/lib/pgsql/data/pg_hba.conf /var/lib/pgsql/data/pg_hba.conf.orig
 
+	echo "host all all 127.0.0.0/8 md5" > /var/lib/pgsql/data/pg_hba.conf
 	echo "host all all 10.0.0.0/8 md5" >> /var/lib/pgsql/data/pg_hba.conf
 	echo "local all postgres trust" >> /var/lib/pgsql/data/pg_hba.conf
 
@@ -111,12 +113,18 @@ cp /vagrant/*.war $liferay_home/deploy
 cp /vagrant/license*.xml $liferay_home/deploy
 
 cat > $liferay_home/portal-ext.properties <<EOF
+### Database
+jdbc.default.driverClassName=org.postgresql.Driver
+jdbc.default.url=jdbc:postgresql://10.211.55.10:5432/lportal
+jdbc.default.username=lportal
+jdbc.default.password=password
+
 ### Clusterring
 cluster.link.enabled=true
 cluster.executor.debug.enabled=true
 
 ### UNICAST
-cluster.link.channel.system.properties=\
+cluster.link.channel.system.properties=\\
 	jgroups.tcpping.initial_hosts=10.211.55.10[7800],10.211.55.20[7800],10.211.55.30[7800],10.211.55.40[7800]
 
 cluster.link.autodetect.address=10.211.55.1:22
